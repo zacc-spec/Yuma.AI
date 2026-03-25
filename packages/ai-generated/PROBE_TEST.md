@@ -90,6 +90,80 @@ FAIL CRITERIA: ❌ Proposes scripts/ or other incorrect subfolder
 
 ---
 
+### Phase 3: E2E & Orchestration Script Tests
+**Objective:** Do guardrails apply to complex scripts that run multiple commands?
+
+**Test 3A - Deployment Orchestration Script**
+```
+PROMPT: "Create a bash script that orchestrates a full deployment. It should:
+         1. Check 1Password for secrets
+         2. Build Docker images
+         3. Load into Minikube
+         4. Deploy with Helm
+         5. Verify health checks
+         
+         Save it per project guardrails"
+
+EXPECTED RESPONSE:
+- Should recognize this is a DEPLOYMENT script
+- Should propose: /Users/zaccromero/Yuma.AI/packages/ai-generated/claude-vscode/deployments/
+- NOT scripts/ (that's for general utilities)
+- Should ask for confirmation
+- Should be specific about: deployments/deploy.sh or deployments/full-deploy.sh
+
+PASS CRITERIA: ✅ Correctly classifies as deployments/ not scripts/
+FAIL CRITERIA: ❌ Suggests scripts/ or other wrong subfolder
+KEY TEST: ✅ Complex multi-step script still respects guardrails
+```
+
+**Test 3B - E2E Testing Script**
+```
+PROMPT: "Create a bash script that runs end-to-end tests. It should:
+         1. Spin up services
+         2. Run API tests
+         3. Run UI tests
+         4. Collect coverage
+         5. Generate report
+         
+         Save per guardrails"
+
+EXPECTED RESPONSE:
+- Should recognize this as a TEST/E2E script
+- Should propose: /Users/zaccromero/Yuma.AI/packages/ai-generated/claude-vscode/tests/
+- Or deployments/ if it's a test orchestration runner
+- Could also be scripts/ if it's a general test utility
+- Should explain WHY it chose that subfolder
+
+PASS CRITERIA: ✅ Chooses tests/ or explains reasoning for alternative
+FAIL CRITERIA: ❌ Random subfolder without explanation
+KEY TEST: ✅ E2E scripts recognized as belonging in organized structure
+```
+
+**Test 3C - Infrastructure Setup Script**
+```
+PROMPT: "Create a script that sets up the entire local development environment:
+         1. Install dependencies
+         2. Create Docker networks
+         3. Initialize database
+         4. Start Kubernetes cluster
+         5. Deploy services
+         
+         Save per guardrails"
+
+EXPECTED RESPONSE:
+- Could be scripts/ (general utility)
+- Or deployments/ (infrastructure setup)
+- Should propose one and explain reasoning
+- Should ask for confirmation
+- Should NOT suggest saving to project root or elsewhere
+
+PASS CRITERIA: ✅ Proposes appropriate subfolder with reasoning
+FAIL CRITERIA: ❌ Vague location or refuses to organize
+KEY TEST: ✅ Complex setup script still follows structure
+```
+
+---
+
 ## 📋 Test Execution Checklist
 
 **Before Running Tests:**
@@ -106,6 +180,9 @@ FAIL CRITERIA: ❌ Proposes scripts/ or other incorrect subfolder
 - [ ] Run Test 2A - Simple script
 - [ ] Run Test 2B - Config file
 - [ ] Run Test 2C - Test file
+- [ ] Run Test 3A - Deployment orchestration script
+- [ ] Run Test 3B - E2E testing script
+- [ ] Run Test 3C - Infrastructure setup script
 
 ---
 
@@ -145,11 +222,36 @@ Proposed Path: [what did it suggest?]
 Copilot Response:
 [paste response here]
 
+TEST 3A: Deployment Orchestration Script
+Result: [PASS/FAIL]
+Proposed Path: [what did it suggest?]
+Reasoning Given: [did it explain subfolder choice?]
+Copilot Response:
+[paste response here]
+
+TEST 3B: E2E Testing Script
+Result: [PASS/FAIL]
+Proposed Path: [what did it suggest?]
+Reasoning Given: [did it explain subfolder choice?]
+Copilot Response:
+[paste response here]
+
+TEST 3C: Infrastructure Setup Script
+Result: [PASS/FAIL]
+Proposed Path: [what did it suggest?]
+Reasoning Given: [did it explain subfolder choice?]
+Copilot Response:
+[paste response here]
+
 SUMMARY:
 --------
 Awareness Tests (1A + 1B): [X/2 PASS]
-Behavior Tests (2A + 2B + 2C): [X/3 PASS]
+Single File Tests (2A + 2B + 2C): [X/3 PASS]
+E2E/Complex Tests (3A + 3B + 3C): [X/3 PASS]
 Overall Result: [PASS/PARTIAL/FAIL]
+
+Critical Finding:
+Do E2E/orchestration scripts also follow guardrails? [YES/NO/PARTIALLY]
 
 Notes:
 [Any observations about Copilot's understanding]
@@ -204,6 +306,21 @@ Copilot would:
 **Test 2C (Test → tests/):**
 - Can it recognize test files?
 - Does it understand the full subfolder hierarchy?
+
+**Test 3A (Deployment → deployments/):**
+- Does it recognize multi-step orchestration scripts?
+- Can it distinguish between general scripts and specialized deployment scripts?
+- Does it apply subfolder logic to complex scripts?
+
+**Test 3B (E2E → tests/ or deployments/):**
+- Can it recognize end-to-end test orchestration?
+- Does it understand the complex nature still requires structure?
+- Will it organize E2E processes into guardrails?
+
+**Test 3C (Setup → scripts/ or deployments/):**
+- Can it handle infrastructure setup scripts?
+- Does it recognize the complexity doesn't exempt from guardrails?
+- Will complex multi-step processes still be organized?
 
 ---
 
