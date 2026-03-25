@@ -1,0 +1,74 @@
+# Example Helm values for Yuma.AI deployment
+# Use this as a template for your chart deployment
+
+backend:
+  enabled: true
+  image:
+    repository: docker-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  replicas: 1
+  
+  port: 5000
+  
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  env:
+    FLASK_ENV: "development"
+    DEBUG: "True"
+  
+  # Secrets (use Kubernetes Secrets in production)
+  secrets:
+    ANTHROPIC_API_KEY: "your_key_here"
+    DATABASE_URL: "postgresql://user:password@localhost:5432/yuma_ai"
+
+frontend:
+  enabled: true
+  image:
+    repository: docker-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  replicas: 1
+  
+  port: 3000
+  
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+namespace:
+  name: yuma-ai
+  create: true
+
+serviceAccount:
+  create: true
+  name: yuma-ai
+
+# Networking
+ingress:
+  enabled: false
+  className: nginx
+  # Configure when ready for production
+
+# Storage
+persistence:
+  enabled: false
+  # Configure when database is needed
+
+# Monitoring
+monitoring:
+  enabled: false
+  # prometheus: false
+  # grafana: false
