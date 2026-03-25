@@ -1,0 +1,39 @@
+# Docker Compose Configuration for Yuma.AI
+# Services and configurations for containerized deployment
+
+services:
+  # Backend service
+  backend:
+    build:
+      context: ../..
+      dockerfile: backend/Dockerfile
+    container_name: yuma-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+      - PORT=5000
+    volumes:
+      - ../../backend:/app
+    networks:
+      - yuma-network
+    restart: unless-stopped
+
+  # Frontend service
+  frontend:
+    build:
+      context: ../..
+      dockerfile: frontend/Dockerfile
+    container_name: yuma-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - yuma-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  yuma-network:
+    driver: bridge

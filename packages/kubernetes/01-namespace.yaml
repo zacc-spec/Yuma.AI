@@ -1,0 +1,12 @@
+---
+# Kubernetes Namespace for Yuma.AI
+# Isolates all Yuma.AI resources from other deployments
+# Good practice: keeps things organized and easy to delete everything together
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yuma-ai
+  labels:
+    app: yuma-ai
+    environment: development

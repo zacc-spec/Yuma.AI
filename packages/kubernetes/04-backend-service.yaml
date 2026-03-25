@@ -1,0 +1,38 @@
+---
+# Backend Service
+# Makes the Flask API discoverable within the Kubernetes cluster
+#
+# Type: ClusterIP (internal only)
+# - Frontend pods will call: http://yuma-backend:5000
+# - External users: NOT accessible directly (use Frontend Service)
+#
+# TO CHECK: kubectl get service -n yuma-ai
+# TO PORT FORWARD (testing): kubectl port-forward svc/yuma-backend 5000:5000 -n yuma-ai
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: yuma-backend
+  namespace: yuma-ai
+  labels:
+    app: yuma-ai
+    component: backend
+
+spec:
+  # ClusterIP = internal only (default)
+  # For external access, Frontend uses this as target
+  type: ClusterIP
+  
+  # Expose port 5000
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+    name: http
+  
+  selector:
+    app: yuma-ai
+    component: backend
+  
+  # Session affinity options (if needed)
+  sessionAffinity: None

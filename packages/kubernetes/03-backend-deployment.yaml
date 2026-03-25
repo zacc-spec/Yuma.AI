@@ -1,0 +1,131 @@
+---
+# Backend Deployment
+# Runs the Flask API in Kubernetes
+#
+# Key Features:
+# - 1 replica for now (change replicas for HA)
+# - Reads config from ConfigMap
+# - Health checks configured
+# - Non-root user for security
+# - Resource requests/limits (can adjust later)
+#
+# TO SCALE: kubectl scale deployment yuma-backend -n yuma-ai --replicas=3
+# TO UPDATE: kubectl set image deployment/yuma-backend yuma-backend=docker-backend:v2 -n yuma-ai
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yuma-backend
+  namespace: yuma-ai
+  labels:
+    app: yuma-ai
+    component: backend
+    tier: api
+
+spec:
+  # Change 'replicas: 1' to 'replicas: 3' for High Availability
+  replicas: 1
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero downtime updates
+  
+  selector:
+    matchLabels:
+      app: yuma-ai
+      component: backend
+  
+  template:
+    metadata:
+      labels:
+        app: yuma-ai
+        component: backend
+      annotations:
+        deployment.kubernetes.io/version: "1"
+
+    spec:
+      # Security context: run as non-root
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      # Only pull from local Docker
+      hostNetwork: false
+      
+      containers:
+      - name: yuma-backend
+        image: docker-backend:latest
+        imagePullPolicy: IfNotPresent
+        
+        # Expose port 5000
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        
+        # Load configuration from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: yuma-config
+        
+        # TODO: Add Kubernetes Secrets for sensitive data
+        # env:
+        # - name: ANTHROPIC_API_KEY
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: yuma-secrets
+        #       key: anthropic-api-key
+        
+        # Health checks for automatic restart
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        
+        # Resource allocation (adjust based on load)
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        # Startup timeout for slow startups
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          failureThreshold: 30  # 30 * 5 = 150 seconds to start
+      
+      # TODO: Add affinity rules when scaling
+      # affinity:
+      #   podAntiAffinity:
+      #     preferredDuringSchedulingIgnoredDuringExecution:
+      #     - weight: 100
+      #       podAffinityTerm:
+      #         labelSelector:
+      #           matchExpressions:
+      #           - key: app
+      #             operator: In
+      #             values:
+      #             - yuma-ai
+      #         topologyKey: kubernetes.io/hostname

@@ -1,0 +1,50 @@
+---
+# Frontend Service
+# Exposes the React app to users
+#
+# Type: LoadBalancer
+# - On Minikube: Creates NodePort accessible via minikube ip
+# - On Cloud: Creates external LoadBalancer (AWS/GCP/Azure)
+#
+# Access:
+# - Minikube: kubectl get service yuma-frontend -n yuma-ai
+#            minikube service yuma-frontend -n yuma-ai
+# - Cloud: Check EXTERNAL-IP via kubectl get service -n yuma-ai
+#
+# TO PORT FORWARD (testing): kubectl port-forward svc/yuma-frontend 3000:3000 -n yuma-ai
+# TO CHANGE TYPE:
+#   - Remove LoadBalancer, use NodePort for dev clusters
+#   - Use ClusterIP if behind Ingress controller
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: yuma-frontend
+  namespace: yuma-ai
+  labels:
+    app: yuma-ai
+    component: frontend
+
+spec:
+  # LoadBalancer = external access (K8s provisions one)
+  # On Minikube: Creates NodePort automatically
+  # On Cloud: Provisions cloud LoadBalancer
+  #
+  # ALTERNATIVE OPTIONS:
+  # - NodePort: Direct port access (dev/testing)
+  # - ClusterIP: Internal only (use with Ingress)
+  type: LoadBalancer
+  
+  # Expose port 3000
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  
+  selector:
+    app: yuma-ai
+    component: frontend
+  
+  # Session affinity options (if needed)
+  sessionAffinity: None

@@ -1,0 +1,44 @@
+# Dockerfile for Yuma.AI Frontend
+# Multi-stage build for optimized production image
+
+FROM node:18-alpine as builder
+
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY frontend/ .
+
+# Build the application
+RUN npm run build
+
+# Production stage - use lightweight nginx
+FROM nginx:alpine
+
+# Copy nginx configuration
+RUN echo "server { \
+    listen 3000; \
+    location / { \
+        root /usr/share/nginx/html; \
+        index index.html index.htm; \
+        try_files \$uri \$uri/ /index.html; \
+    } \
+}" > /etc/nginx/conf.d/default.conf
+
+# Copy built application from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

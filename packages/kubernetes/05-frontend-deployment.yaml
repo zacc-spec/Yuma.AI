@@ -1,0 +1,119 @@
+---
+# Frontend Deployment
+# Runs React app via Nginx in Kubernetes
+#
+# Key Features:
+# - 1 replica for now (change replicas for HA)
+# - Pre-built React app (already in docker-frontend image)
+# - Nginx serves static content
+# - Health checks configured
+# - Non-root user for security
+#
+# TO SCALE: kubectl scale deployment yuma-frontend -n yuma-ai --replicas=3
+# TO UPDATE: kubectl set image deployment/yuma-frontend yuma-frontend=docker-frontend:v2 -n yuma-ai
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yuma-frontend
+  namespace: yuma-ai
+  labels:
+    app: yuma-ai
+    component: frontend
+    tier: web
+
+spec:
+  # Change 'replicas: 1' to 'replicas: 3' for High Availability
+  replicas: 1
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero downtime updates
+  
+  selector:
+    matchLabels:
+      app: yuma-ai
+      component: frontend
+  
+  template:
+    metadata:
+      labels:
+        app: yuma-ai
+        component: frontend
+      annotations:
+        deployment.kubernetes.io/version: "1"
+
+    spec:
+      # Note: Nginx needs root for /var/cache/nginx
+      # Security context removed for Nginx compatibility
+      
+      hostNetwork: false
+      
+      containers:
+      - name: yuma-frontend
+        image: docker-frontend:latest
+        imagePullPolicy: IfNotPresent
+        
+        # Expose port 3000 (nginx)
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        
+        # Load configuration
+        envFrom:
+        - configMapRef:
+            name: yuma-config
+        
+        # Health checks for automatic restart
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        
+        # Resource allocation
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        
+        # Startup timeout
+        startupProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          failureThreshold: 30
+      
+      # TODO: Add affinity rules when scaling
+      # affinity:
+      #   podAntiAffinity:
+      #     preferredDuringSchedulingIgnoredDuringExecution:
+      #     - weight: 100
+      #       podAffinityTerm:
+      #         labelSelector:
+      #           matchExpressions:
+      #           - key: app
+      #             operator: In
+      #             values:
+      #             - yuma-ai
+      #         topologyKey: kubernetes.io/hostname

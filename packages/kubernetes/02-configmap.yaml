@@ -1,0 +1,34 @@
+---
+# Kubernetes ConfigMap for Yuma.AI
+# Stores configuration and environment variables
+# Better than hardcoding in images; easy to update without rebuilding
+# 
+# NOTE: This uses ConfigMap (plain text). For production/sensitive data:
+#       Replace with Kubernetes Secrets or external secret manager
+#
+# TO UPDATE: kubectl set env configmap/yuma-config -n yuma-ai KEY=value
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yuma-config
+  namespace: yuma-ai
+  labels:
+    app: yuma-ai
+    component: config
+
+data:
+  # Backend Configuration
+  FLASK_ENV: "development"  # Change to "production" for production
+  FLASK_DEBUG: "False"
+  PORT: "5000"
+  
+  # API Configuration
+  API_VERSION: "v1"
+  
+  # TODO: Add when you have values
+  # ANTHROPIC_API_KEY: ""  # DON'T PUT HERE - use Kubernetes Secrets instead!
+  # DATABASE_URL: ""
+  
+  # Logging
+  LOG_LEVEL: "INFO"
